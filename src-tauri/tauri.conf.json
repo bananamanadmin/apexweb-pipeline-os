@@ -1,0 +1,22 @@
+[package]
+name = "apexweb-pipeline-os"
+version = "0.1.0"
+build = "src-tauri/target/release/apexweb-pipeline-os"
+
+[tauri]
+features = ["custom-protocol"]
+
+[build]
+beforeBuildCommand = "npm run build"
+
+[dev]
+beforeDevCommand = "npm run dev"
+
+[app]
+withGlobalTauri = false
+
+[app.windows]
+
+[[bin]]
+name = "apexweb-pipeline-os"
+path = "src-tauri/src/main.rs"
