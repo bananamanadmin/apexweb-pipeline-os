@@ -1,27 +1,57 @@
 # ApexWeb Pipeline OS
 
-A desktop-style operating environment for website generation, multi-view workspaces, provider management, and premium project orchestration.
+A desktop-like web application shell for a premium website generation pipeline, designed to feel like a real operating environment for business research, creative direction, asset sourcing, and QA.
 
-## Features
+## What this includes
 
-- Desktop-grade multiview OS shell
-- Persistent workspace and panel state
-- Command palette and shortcuts
-- Google / Gmail / Obsidian / Pexels setup surfaces
-- API health and provider routing UI
+- Multi-panel desktop workspace
+- Persistent local workspace state
+- Provider setup for Google, Gmail, Obsidian, and Pexels
+- Command palette and panel manager
 - Focus timer and project state
-- Website preview and task panels
-- Local state persisted in the browser / Tauri runtime
+- Supportive UI for the "ApexWeb pipeline OS" concept
 
-## Run locally
+## Local runtime setup
 
-1. Install dependencies:
-   npm install
-2. Start the app:
-   npm run tauri dev
-3. Build the desktop app:
-   npm run tauri build
+Requirements:
+- Node.js 20+
+- npm
+- Tauri desktop prerequisites for your OS
 
-## Important note
+Install dependencies:
 
-Google OAuth, Gmail, Pexels, and Obsidian are implemented as real setup flows and live API test surfaces when credentials are provided. The app does not ship with production secrets and will show a configured/blocked state unless the user supplies their own credentials.
+```bash
+npm install
+```
+
+Run the web app:
+
+```bash
+npm run dev
+```
+
+Run the Tauri desktop app (requires Tauri toolchain on your machine):
+
+```bash
+npm run tauri dev
+```
+
+Build the desktop app:
+
+```bash
+npm run tauri build
+```
+
+## Important
+
+This project is a real local-first desktop shell, but it does not ship with live Google OAuth credentials, Gmail access, Obsidian vault access, or Pexels production keys. Those must be supplied by the user in the app settings or in local environment variables for real runtime integration.
+
+## Example environment file
+
+Create a `.env.local` file for frontend config if you want to test live OAuth or APIs:
+
+```bash
+VITE_GOOGLE_CLIENT_ID=your_google_client_id_here
+```
+
+Use the Settings panel to paste keys and test connections when running locally.

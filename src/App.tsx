@@ -13,6 +13,8 @@ type PanelType =
   | 'assistant'
   | 'settings'
 
+type ProviderStatus = 'connected' | 'blocked' | 'offline'
+
 interface PanelWindow {
   id: string
   type: PanelType
@@ -36,7 +38,7 @@ interface WorkspaceState {
 
 interface ProviderConfig {
   name: string
-  status: 'connected' | 'blocked' | 'offline'
+  status: ProviderStatus
   value: string
   endpoint: string
   description: string
@@ -46,7 +48,7 @@ const DEFAULT_WORKSPACES = [
   { name: 'ApexWeb Main', project: 'Northstar Studio', business: 'Luxury HVAC', layout: 'Build Mode' },
   { name: 'Client Projects', project: 'Westline Homes', business: 'Architectural Design', layout: 'Research Mode' },
   { name: 'Testing Lab', project: 'Prototype Flow', business: 'Website QA Lab', layout: 'QA Mode' },
-]
+] as const
 
 const PANEL_META: Record<PanelType, { title: string; accent: string }> = {
   focus: { title: 'Focus', accent: '#7dd3fc' },
@@ -106,41 +108,35 @@ const defaultIntegrations: Record<string, ProviderConfig> = {
 }
 
 const initialPanels = (): PanelWindow[] => [
-  { id: 'focus-window', type: 'focus', title: 'Focus', x: 10, y: 12, w: 270, h: 220, minimized: false },
-  { id: 'preview-window', type: 'preview', title: 'Preview', x: 300, y: 12, w: 520, h: 360, minimized: false },
-  { id: 'tasks-window', type: 'tasks', title: 'Tasks', x: 860, y: 12, w: 260, h: 260, minimized: false },
-  { id: 'api-window', type: 'api', title: 'API Health', x: 860, y: 290, w: 260, h: 240, minimized: false },
-  { id: 'assistant-window', type: 'assistant', title: 'Assistant', x: 300, y: 400, w: 540, h: 220, minimized: false },
-  { id: 'obsidian-window', type: 'obsidian', title: 'Obsidian', x: 10, y: 260, w: 270, h: 320, minimized: false }
+  { id: 'focus-window', type: 'focus', title: 'Focus', x: 14, y: 16, w: 290, h: 220, minimized: false },
+  { id: 'preview-window', type: 'preview', title: 'Preview', x: 324, y: 14, w: 540, h: 360, minimized: false },
+  { id: 'tasks-window', type: 'tasks', title: 'Tasks', x: 882, y: 18, w: 260, h: 270, minimized: false },
+  { id: 'api-window', type: 'api', title: 'API Health', x: 882, y: 304, w: 260, h: 250, minimized: false },
+  { id: 'assistant-window', type: 'assistant', title: 'Assistant', x: 324, y: 404, w: 540, h: 230, minimized: false },
+  { id: 'obsidian-window', type: 'obsidian', title: 'Obsidian', x: 14, y: 254, w: 290, h: 330, minimized: false }
 ]
 
+const getLocalStorage = <T,>(key: string, fallback: T): T => {
+  try {
+    const value = window.localStorage.getItem(key)
+    return value ? JSON.parse(value) as T : fallback
+  } catch {
+    return fallback
+  }
+}
+
 function App() {
-  const [workspace, setWorkspace] = useState<WorkspaceState>(() => {
-    const saved = window.localStorage.getItem('apexweb.workspace')
-    return saved ? JSON.parse(saved) : DEFAULT_WORKSPACE_STATE
-  })
-
-  const [workspaces, setWorkspaces] = useState(() => {
-    const saved = window.localStorage.getItem('apexweb.workspaces')
-    return saved ? JSON.parse(saved) : DEFAULT_WORKSPACES
-  })
-
-  const [integrations, setIntegrations] = useState<Record<string, ProviderConfig>>(() => {
-    const saved = window.localStorage.getItem('apexweb.integrations')
-    return saved ? JSON.parse(saved) : defaultIntegrations
-  })
-
-  const [panels, setPanels] = useState<PanelWindow[]>(() => {
-    const saved = window.localStorage.getItem('apexweb.panels')
-    return saved ? JSON.parse(saved) : initialPanels()
-  })
+  const [workspace, setWorkspace] = useState<WorkspaceState>(() => getLocalStorage('apexweb.workspace', DEFAULT_WORKSPACE_STATE))
+  const [workspaces, setWorkspaces] = useState(() => getLocalStorage('apexweb.workspaces', DEFAULT_WORKSPACES))
+  const [integrations, setIntegrations] = useState<Record<string, ProviderConfig>>(() => getLocalStorage('apexweb.integrations', defaultIntegrations))
+  const [panels, setPanels] = useState<PanelWindow[]>(() => getLocalStorage('apexweb.panels', initialPanels()))
 
   const [commandOpen, setCommandOpen] = useState(false)
   const [commandQuery, setCommandQuery] = useState('')
   const [statusLine, setStatusLine] = useState('System ready • provider routing online • 6 active views')
   const [focusSeconds, setFocusSeconds] = useState(54 * 60)
-  const [pexelsResult, setPexelsResult] = useState<string>('Awaiting connection test')
-  const [gmailState, setGmailState] = useState<string>('Awaiting Google auth')
+  const [pexelsResult, setPexelsResult] = useState('Awaiting connection test')
+  const [gmailState, setGmailState] = useState('Awaiting Google auth')
 
   useEffect(() => {
     window.localStorage.setItem('apexweb.workspace', JSON.stringify(workspace))
@@ -174,26 +170,9 @@ function App() {
   const commandItems = useMemo(() => {
     const query = commandQuery.toLowerCase()
     const list = [
-      'New Project',
-      'New Website',
-      'Open Workspace',
-      'Switch Workspace',
-      'Open Obsidian',
-      'Search Memory',
-      'Open Gmail',
-      'Open Business',
-      'Start Agent Run',
-      'Pause Run',
-      'Resume Run',
-      'Retry Failed Task',
-      'Open API Health',
-      'Open Preview',
-      'Run QA',
-      'Start Focus',
-      'Toggle Multiview',
-      'Create Panel',
-      'Save Layout',
-      'Share Workspace'
+      'New Project', 'New Website', 'Open Workspace', 'Switch Workspace', 'Open Obsidian', 'Search Memory', 'Open Gmail',
+      'Open Business', 'Start Agent Run', 'Pause Run', 'Resume Run', 'Retry Failed Task', 'Open API Health', 'Open Preview',
+      'Run QA', 'Start Focus', 'Toggle Multiview', 'Create Panel', 'Save Layout', 'Share Workspace'
     ]
     return list.filter((item) => item.toLowerCase().includes(query))
   }, [commandQuery])
@@ -204,7 +183,7 @@ function App() {
       if (existing) {
         return current.map((panel) => (panel.type === type ? { ...panel, minimized: false } : panel))
       }
-      const next = {
+      const next: PanelWindow = {
         id: `${type}-window-${Date.now()}`,
         type,
         title: PANEL_META[type].title,
@@ -212,7 +191,7 @@ function App() {
         y: 30 + (current.length * 18) % 140,
         w: 260,
         h: 240,
-        minimized: false
+        minimized: false,
       }
       return [...current, next]
     })
@@ -226,16 +205,11 @@ function App() {
     setStatusLine('Layout saved • workspace state persisted and restored on reload')
   }
 
-  const switchWorkspace = (index: number) => {
-    const next = workspaces[index]
-    setWorkspace((current) => ({
-      ...current,
-      name: next.name,
-      project: next.project,
-      business: next.business,
-      layout: next.layout
-    }))
-    setStatusLine(`Workspace switched to ${next.name}`)
+  const switchWorkspace = (name: string) => {
+    const target = workspaces.find((item) => item.name === name)
+    if (!target) return
+    setWorkspace((current) => ({ ...current, name: target.name, project: target.project, business: target.business, layout: target.layout }))
+    setStatusLine(`Workspace switched to ${target.name}`)
   }
 
   const addWorkspace = () => {
@@ -277,30 +251,27 @@ function App() {
       setPexelsResult('Pexels not configured — add an API key to test live connectivity.')
       return
     }
+
     try {
       const res = await fetch('https://api.pexels.com/v1/search?query=modern+luxury+home+exterior&per_page=1', {
         headers: { Authorization: key }
       })
+
       if (!res.ok) {
         setPexelsResult(`Pexels test failed: ${res.status} ${res.statusText}`)
         setStatusLine('Provider health degraded • Pexels rejected the supplied key or quota')
         return
       }
+
       const json = await res.json()
       const photoCount = Array.isArray(json.photos) ? json.photos.length : 0
       setPexelsResult(photoCount > 0 ? `Connected. ${photoCount} result(s) returned for a live search.` : 'Connected. The API responded, but no images were returned for the test query.')
       setStatusLine('Pexels verified successfully')
-      setIntegrations((current) => ({
-        ...current,
-        pexels: { ...current.pexels, status: 'connected' }
-      }))
+      setIntegrations((current) => ({ ...current, pexels: { ...current.pexels, status: 'connected' } }))
     } catch (error) {
       setPexelsResult('Connection error. Check the network or API key.')
       setStatusLine('Pexels connection failed — verify the API key and quota')
-      setIntegrations((current) => ({
-        ...current,
-        pexels: { ...current.pexels, status: 'offline' }
-      }))
+      setIntegrations((current) => ({ ...current, pexels: { ...current.pexels, status: 'offline' } }))
       console.error(error)
     }
   }
@@ -312,10 +283,7 @@ function App() {
       return
     }
     setGmailState('Gmail connected • inbox metadata ready for review')
-    setIntegrations((current) => ({
-      ...current,
-      gmail: { ...current.gmail, status: 'connected' }
-    }))
+    setIntegrations((current) => ({ ...current, gmail: { ...current.gmail, status: 'connected' } }))
   }
 
   const commandAction = (action: string) => {
@@ -332,28 +300,11 @@ function App() {
       'Save Layout': saveLayout,
       'New Project': addWorkspace,
       'Search Memory': () => openPanel('search'),
-      'Run QA': () => setStatusLine('QA run queued • visual and functional checks now evaluating the current build'),
+      'Run QA': () => setStatusLine('QA run queued • visual and functional checks evaluating the current build'),
       'Share Workspace': () => setStatusLine('Sharing permissions opened • owner, admin, editor, and viewer roles ready'),
       'Start Agent Run': () => setStatusLine('Agent run started • design, asset research, and QA tasks are queued')
     }
     if (map[action]) map[action]()
-  }
-
-  const openPanelList = (panelType: PanelType) => {
-    setPanels((current) => {
-      const existing = current.find((panel) => panel.type === panelType)
-      if (existing) return current
-      return [...current, {
-        id: `${panelType}-window-${Date.now()}`,
-        type: panelType,
-        title: PANEL_META[panelType].title,
-        x: 36 + current.length * 16,
-        y: 32 + current.length * 18,
-        w: 320,
-        h: 220,
-        minimized: false,
-      }]
-    })
   }
 
   const smallCards = [
@@ -375,7 +326,7 @@ function App() {
         </div>
 
         <div className="workspace-switcher">
-          <select value={workspace.name} onChange={(event) => switchWorkspace(workspaces.findIndex((item) => item.name === event.target.value))}>
+          <select value={workspace.name} onChange={(event) => switchWorkspace(event.target.value)}>
             {workspaces.map((item) => (
               <option key={item.name} value={item.name}>{item.name}</option>
             ))}
@@ -394,7 +345,7 @@ function App() {
           <div className="sidebar-title">Workspace</div>
           <div className="nav-list">
             {PANEL_ORDER.map((panelType) => (
-              <button key={panelType} className="nav-item" onClick={() => openPanelList(panelType)}>
+              <button key={panelType} className="nav-item" onClick={() => openPanel(panelType)}>
                 <span className="nav-dot" style={{ background: PANEL_META[panelType].accent }} />
                 {PANEL_META[panelType].title}
               </button>
@@ -445,9 +396,9 @@ function App() {
                     {panel.title}
                   </div>
                   <div className="window-actions">
-                    <button>—</button>
-                    <button>□</button>
-                    <button onClick={() => closePanel(panel.type)}>×</button>
+                    <button type="button">—</button>
+                    <button type="button">□</button>
+                    <button type="button" onClick={() => closePanel(panel.type)}>×</button>
                   </div>
                 </div>
 
@@ -478,9 +429,9 @@ function App() {
                         <button className="primary">Book a consultation</button>
                       </div>
                       <div className="preview-grid">
-                        <div className="mini-card"></div>
-                        <div className="mini-card accent"></div>
-                        <div className="mini-card long"></div>
+                        <div className="mini-card" />
+                        <div className="mini-card accent" />
+                        <div className="mini-card long" />
                       </div>
                     </div>
                   </div>
@@ -492,7 +443,7 @@ function App() {
                     <div className="task-item good"><span>Concept</span><strong>Approved</strong></div>
                     <div className="task-item active"><span>Asset pipeline</span><strong>Running</strong></div>
                     <div className="task-item warn"><span>QA review</span><strong>Pending</strong></div>
-                    <button className="ghost full" onClick={() => setStatusLine('Retry gate opened for asset selection task')}>Retry failed task</button>
+                    <button className="ghost full" type="button" onClick={() => setStatusLine('Retry gate opened for asset selection task')}>Retry failed task</button>
                   </div>
                 )}
 
@@ -515,8 +466,8 @@ function App() {
                     <div className="chat-bubble user">Open the latest HVAC concept and compare it with the prior rejected version.</div>
                     <div className="chat-bubble bot">I’ve identified the stronger direction: premium editorial framing with higher-contrast hero motion, less generic glass styling, and stronger CTA hierarchy.</div>
                     <div className="assistant-actions">
-                      <button className="ghost" onClick={() => openPanel('search')}>Search memory</button>
-                      <button className="ghost" onClick={() => openPanel('preview')}>Open preview</button>
+                      <button className="ghost" type="button" onClick={() => openPanel('search')}>Search memory</button>
+                      <button className="ghost" type="button" onClick={() => openPanel('preview')}>Open preview</button>
                     </div>
                   </div>
                 )}
@@ -527,7 +478,7 @@ function App() {
                     <div className="vault-row"><strong>Concepts</strong><span>12</span></div>
                     <div className="vault-row"><strong>Runs</strong><span>07</span></div>
                     <div className="vault-row"><strong>Lessons</strong><span>03</span></div>
-                    <button className="ghost full" onClick={() => setStatusLine('Obsidian vault synced • memory browser is active')}>Sync vault</button>
+                    <button className="ghost full" type="button" onClick={() => setStatusLine('Obsidian vault synced • memory browser is active')}>Sync vault</button>
                   </div>
                 )}
 
@@ -582,9 +533,9 @@ function App() {
                             value={provider.value}
                             onChange={(event) => setIntegrationValue(key, event.target.value)}
                           />
-                          {key === 'google' && <button className="ghost full" onClick={beginGoogleAuth}>Start auth</button>}
-                          {key === 'gmail' && <button className="ghost full" onClick={testGmailConnection}>Test Gmail</button>}
-                          {key === 'pexels' && <button className="ghost full" onClick={testPexelsConnection}>Test Pexels</button>}
+                          {key === 'google' && <button className="ghost full" type="button" onClick={beginGoogleAuth}>Start auth</button>}
+                          {key === 'gmail' && <button className="ghost full" type="button" onClick={testGmailConnection}>Test Gmail</button>}
+                          {key === 'pexels' && <button className="ghost full" type="button" onClick={testPexelsConnection}>Test Pexels</button>}
                         </div>
                       ))}
                     </div>
@@ -644,7 +595,7 @@ function App() {
             />
             <div className="command-list">
               {commandItems.map((item) => (
-                <button key={item} className="command-item" onClick={() => commandAction(item)}>{item}</button>
+                <button key={item} className="command-item" type="button" onClick={() => commandAction(item)}>{item}</button>
               ))}
             </div>
           </div>
