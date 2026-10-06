@@ -2,8 +2,7 @@
   "build": {
     "beforeBuildCommand": "npm run build",
     "beforeDevCommand": "npm run dev",
-    "devPath": "http://localhost:5173",
-    "frontendDist": "../dist"
+    "devPath": "http://localhost:5173"
   },
   "tauri": {
     "allowlist": {
